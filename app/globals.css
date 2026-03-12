@@ -1,0 +1,58 @@
+/* app/globals.css */
+@import "@measured/puck/puck.css";
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --puck-color-azure-01: #1e3a5f;
+    --puck-color-azure-02: #1d4ed8;
+    --puck-color-azure-03: #2563eb;
+    --puck-color-azure-04: #3b82f6;
+    --puck-color-azure-05: #60a5fa;
+    --puck-color-azure-06: #93c5fd;
+    --puck-color-azure-07: #bfdbfe;
+    --puck-color-azure-08: #dbeafe;
+    --puck-color-azure-09: #eff6ff;
+    --puck-color-azure-10: #f8faff;
+
+    --puck-color-grey-01: #0f172a;
+    --puck-color-grey-02: #1e293b;
+    --puck-color-grey-03: #334155;
+    --puck-color-grey-04: #475569;
+    --puck-color-grey-05: #64748b;
+    --puck-color-grey-06: #94a3b8;
+    --puck-color-grey-07: #cbd5e1;
+    --puck-color-grey-08: #e2e8f0;
+    --puck-color-grey-09: #f1f5f9;
+    --puck-color-grey-10: #f8fafc;
+
+    --puck-header-height: 0px;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #334155 transparent;
+  }
+}
+
+[data-puck-component="ActionBar"],
+[class^="ActionBar"],
+[class*=" ActionBar"],
+header[class*="Puck"],
+div[class*="PuckLayout-header"],
+div[class*="puck-layout__header"] {
+  display: none !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+[class*="PuckLayout"],
+[class*="puck-layout"] {
+  height: 100% !important;
+  min-height: 100% !important;
+}
+
+[class*="PuckLayout-inner"],
+[class*="puck-layout__inner"] {
+  height: 100% !important;
+}
