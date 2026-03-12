@@ -13,6 +13,7 @@ export interface BarChartBlockProps {
   endpoint: string;
   dataKey: string;
   categoryKey: string;
+  csvData?: string; // base64 CSV — persiste no localStorage com o dashboard
 }
 
 export interface LineChartBlockProps {
@@ -21,6 +22,7 @@ export interface LineChartBlockProps {
   endpoint: string;
   lines: string;
   categoryKey: string;
+  csvData?: string;
 }
 
 export interface PieChartBlockProps {
@@ -29,10 +31,7 @@ export interface PieChartBlockProps {
   endpoint: string;
   valueKey: string;
   nameKey: string;
-}
-
-export interface GridLayoutProps {
-  columns: 2 | 3 | 4;
+  csvData?: string;
 }
 
 export interface TextBlockProps {
@@ -47,19 +46,45 @@ export interface ImageBlockProps {
   caption: string;
   fit: "contain" | "cover" | "fill";
   rounded: "true" | "false";
-  height: number;
+}
+
+// ── Grid ──────────────────────────────────────────────────────────────────────
+
+export type BlockType =
+  | "KpiCard"
+  | "BarChartBlock"
+  | "LineChartBlock"
+  | "PieChartBlock"
+  | "TextBlock"
+  | "ImageBlock";
+
+export type BlockProps =
+  | ({ type: "KpiCard" } & KpiCardProps)
+  | ({ type: "BarChartBlock" } & BarChartBlockProps)
+  | ({ type: "LineChartBlock" } & LineChartBlockProps)
+  | ({ type: "PieChartBlock" } & PieChartBlockProps)
+  | ({ type: "TextBlock" } & TextBlockProps)
+  | ({ type: "ImageBlock" } & ImageBlockProps);
+
+export interface GridBlock {
+  id: string;
+  props: BlockProps;
+  layout: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    minW?: number;
+    minH?: number;
+  };
+}
+
+export interface DashboardData {
+  blocks: GridBlock[];
 }
 
 export type EditorMode = "edit" | "preview";
 
-export interface BarChartDataPoint {
-  [key: string]: string | number;
-}
-
-export interface LineChartDataPoint {
-  [key: string]: string | number;
-}
-
-export interface PieChartDataPoint {
-  [key: string]: string | number;
-}
+export interface BarChartDataPoint   { [key: string]: string | number; }
+export interface LineChartDataPoint  { [key: string]: string | number; }
+export interface PieChartDataPoint   { [key: string]: string | number; }

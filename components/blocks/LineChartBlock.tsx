@@ -1,76 +1,54 @@
 // components/blocks/LineChartBlock.tsx
 "use client";
 
-import { useState, useCallback } from "react";
+import { useMemo } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
+import type { LineChartBlockProps, LineChartDataPoint } from "@/types";
+import { ChartWrapper } from "@/components/blocks/ChartWrapper";
+import { useFetchData } from "@/lib/fetch-data";
+import { parseCsv } from "@/lib/csv-parser";
 import { lineChartData } from "@/lib/mock-data";
-import { useFetchData, useCsvData } from "@/lib/fetch-data";
-import { ChartWrapper } from "./ChartWrapper";
-import { CsvUploader } from "./CsvUploader";
-import type { LineChartBlockProps } from "@/types";
 
-const LINE_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#ef4444"];
+const LINE_COLORS = [
+  "var(--theme-chart-1, #3b82f6)",
+  "var(--theme-chart-2, #10b981)",
+  "var(--theme-chart-3, #f59e0b)",
+];
 
 export function LineChartBlock({
-  title, showLegend, endpoint, lines, categoryKey,
+  title, endpoint, lines, categoryKey, showLegend, csvData,
 }: LineChartBlockProps) {
-  const [csvContent, setCsvContent] = useState<string | null>(null);
-  const [csvFilename, setCsvFilename] = useState<string | null>(null);
+  const { data: fetched, loading, error } = useFetchData<LineChartDataPoint>(endpoint);
 
-  const localData = useCsvData(csvContent, []);
-  const { state, data: remoteData } = useFetchData(endpoint, lineChartData);
+  const data = useMemo<LineChartDataPoint[]>(() => {
+    if (csvData) return parseCsv(csvData) as LineChartDataPoint[];
+    if (fetched && fetched.length > 0) return fetched;
+    return lineChartData;
+  }, [csvData, fetched]);
 
-  const data = csvContent ? localData : remoteData;
-  const isLoading = !csvContent && state.status === "loading";
-  const error = !csvContent && state.status === "error" ? state.message : null;
-  const hasData = csvContent ? localData.length > 0 : !!endpoint;
-
-  const legendVisible = showLegend === "true";
-  const activeCategory = categoryKey || "mes";
-  const lineKeys = lines
-    ? lines.split(",").map((k) => k.trim()).filter(Boolean)
-    : ["receita", "meta"];
-
-  const handleCsvData = useCallback((content: string, filename: string) => {
-    setCsvContent(content);
-    setCsvFilename(filename);
-  }, []);
-
-  const handleCsvClear = useCallback(() => {
-    setCsvContent(null);
-    setCsvFilename(null);
-  }, []);
+  const isMock = !csvData && (!fetched || fetched.length === 0);
+  const lineKeys = lines.split(",").map((l) => l.trim()).filter(Boolean);
 
   return (
-    <div className="flex flex-col gap-3">
-      <CsvUploader onData={handleCsvData} onClear={handleCsvClear} filename={csvFilename} />
-      <ChartWrapper title={title} isLoading={isLoading} error={error} hasEndpoint={hasData}>
-        <ResponsiveContainer width="100%" height={240}>
-          <LineChart
-            data={data as Record<string, string | number>[]}
-            margin={{ top: 4, right: 16, left: 0, bottom: 4 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey={activeCategory} tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid #e5e7eb" }} />
-            {legendVisible && <Legend />}
+    <ChartWrapper title={title} loading={loading} error={error} isMock={isMock}>
+      <div className="flex-1 min-h-0 px-2 pb-3">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 8, right: 16, left: 0, bottom: 4 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey={categoryKey} tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+            {showLegend === "true" && <Legend wrapperStyle={{ fontSize: 11 }} />}
             {lineKeys.map((key, i) => (
-              <Line
-                key={key}
-                type="monotone"
-                dataKey={key}
+              <Line key={key} type="monotone" dataKey={key}
                 stroke={LINE_COLORS[i % LINE_COLORS.length]}
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
-              />
+                strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
             ))}
           </LineChart>
         </ResponsiveContainer>
-      </ChartWrapper>
-    </div>
+      </div>
+    </ChartWrapper>
   );
 }

@@ -2,61 +2,50 @@
 "use client";
 
 import { useRef, useCallback } from "react";
-import { Upload, FileText, X } from "lucide-react";
+import { Upload, X, CheckCircle2 } from "lucide-react";
 
 interface CsvUploaderProps {
-  onData: (content: string, filename: string) => void;
+  /** CSV já carregado (vindo das props persistidas) */
+  value: string;
+  /** Chamado com o conteúdo bruto do CSV ao fazer upload */
+  onChange: (csvText: string) => void;
   onClear: () => void;
-  filename: string | null;
 }
 
-export function CsvUploader({ onData, onClear, filename }: CsvUploaderProps) {
+export function CsvUploader({ value, onChange, onClear }: CsvUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = useCallback(
-    (file: File) => {
-      if (!file.name.endsWith(".csv") && !file.name.endsWith(".txt")) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const content = e.target?.result as string;
-        if (content) onData(content, file.name);
-      };
-      reader.readAsText(file, "UTF-8");
-    },
-    [onData]
-  );
+  const readFile = useCallback((file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      if (text) onChange(text);
+    };
+    reader.readAsText(file, "UTF-8");
+  }, [onChange]);
 
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) handleFile(file);
-      e.target.value = "";
-    },
-    [handleFile]
-  );
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) readFile(file);
+    e.target.value = "";
+  }, [readFile]);
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const file = e.dataTransfer.files?.[0];
-      if (file) handleFile(file);
-    },
-    [handleFile]
-  );
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) readFile(file);
+  }, [readFile]);
 
-  if (filename) {
+  if (value) {
+    const lines = value.trim().split("\n").length - 1;
     return (
-      <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-        <FileText size={13} className="text-emerald-600 shrink-0" />
-        <span className="text-xs text-emerald-700 truncate flex-1 font-medium">
-          {filename}
+      <div className="flex items-center gap-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 px-3 py-2">
+        <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+        <span className="text-xs text-emerald-300 flex-1 truncate">
+          CSV carregado — {lines} linha{lines !== 1 ? "s" : ""}
         </span>
-        <button
-          onClick={onClear}
-          className="shrink-0 text-emerald-500 hover:text-red-500 transition-colors"
-          title="Remover arquivo"
-        >
-          <X size={13} />
+        <button onClick={onClear} className="text-emerald-500 hover:text-red-400 transition-colors">
+          <X size={12} />
         </button>
       </div>
     );
@@ -67,17 +56,16 @@ export function CsvUploader({ onData, onClear, filename }: CsvUploaderProps) {
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
       onClick={() => inputRef.current?.click()}
-      className="flex flex-col items-center gap-1.5 border-2 border-dashed border-gray-200 rounded-lg p-4 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors"
+      className="flex items-center gap-2 border-2 border-dashed border-gray-600 rounded-lg px-3 py-2.5 cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/5 transition-colors"
     >
-      <Upload size={16} className="text-gray-400" />
-      <p className="text-xs text-gray-500 text-center">
-        Arraste um <span className="font-medium text-gray-700">.csv</span> ou{" "}
-        <span className="text-blue-500 underline">clique para selecionar</span>
-      </p>
+      <Upload size={13} className="text-gray-500 shrink-0" />
+      <span className="text-xs text-gray-500">
+        Arraste um <span className="text-blue-400">.csv</span> ou clique para buscar
+      </span>
       <input
         ref={inputRef}
         type="file"
-        accept=".csv,.txt"
+        accept=".csv,text/csv"
         onChange={handleChange}
         className="hidden"
       />

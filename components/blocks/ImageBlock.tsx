@@ -1,102 +1,95 @@
 // components/blocks/ImageBlock.tsx
 "use client";
 
-import { useRef, useCallback, useState } from "react";
-import { ImageIcon, X } from "lucide-react";
+import { useRef, useCallback } from "react";
+import { ImageIcon, Upload } from "lucide-react";
 import type { ImageBlockProps } from "@/types";
 
-export function ImageBlock({ alt, caption, fit, rounded, height }: ImageBlockProps) {
-  const [preview, setPreview] = useState<string>("");
+interface Props extends ImageBlockProps {
+  /** Presente apenas no editor — permite persistir o src nas props do bloco */
+  onPropsChange?: (patch: Partial<ImageBlockProps>) => void;
+}
+
+export function ImageBlock({ src, alt, caption, fit, rounded, onPropsChange }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const isRounded = rounded === "true";
 
   const handleFile = useCallback((file: File) => {
-    if (!file.type.startsWith("image/")) return;
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
-      if (result) setPreview(result);
+      if (result) onPropsChange?.({ src: result });
     };
     reader.readAsDataURL(file);
-  }, []);
+  }, [onPropsChange]);
 
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) handleFile(file);
-      e.target.value = "";
-    },
-    [handleFile]
-  );
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  }, [handleFile]);
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const file = e.dataTransfer.files?.[0];
-      if (file) handleFile(file);
-    },
-    [handleFile]
-  );
+  const borderRadius = rounded === "true" ? "rounded-xl" : "rounded-none";
 
-  if (!preview) {
+  if (!src) {
     return (
       <div
+        className={`w-full h-full flex flex-col items-center justify-center gap-2 bg-gray-100 border-2 border-dashed border-gray-300 ${borderRadius} cursor-pointer hover:bg-gray-50 transition-colors`}
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
-        onClick={() => inputRef.current?.click()}
-        className="flex flex-col items-center justify-center gap-3 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-colors"
-        style={{ height: `${height}px` }}
+        onClick={() => onPropsChange && inputRef.current?.click()}
       >
-        <div className="bg-gray-100 rounded-full p-3">
-          <ImageIcon size={20} className="text-gray-400" />
-        </div>
-        <div className="text-center">
-          <p className="text-sm font-medium text-gray-600">Arraste uma imagem</p>
-          <p className="text-xs text-gray-400 mt-0.5">
-            ou{" "}
-            <span className="text-blue-500 underline">clique para selecionar</span>
-          </p>
-          <p className="text-xs text-gray-300 mt-1">PNG, JPG, SVG, WEBP</p>
-        </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleChange}
-          className="hidden"
-        />
+        <ImageIcon size={28} className="text-gray-400 opacity-60" />
+        {onPropsChange ? (
+          <>
+            <p className="text-xs text-gray-400">Arraste uma imagem ou clique</p>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
+            />
+          </>
+        ) : (
+          <p className="text-xs text-gray-400">Nenhuma imagem</p>
+        )}
       </div>
     );
   }
 
   return (
-    <figure className="flex flex-col gap-2">
-      <div
-        className="relative group overflow-hidden bg-gray-100"
-        style={{ height: `${height}px`, borderRadius: isRounded ? "12px" : "4px" }}
-      >
+    <div className={`w-full h-full flex flex-col overflow-hidden ${borderRadius}`}>
+      <div className="flex-1 relative min-h-0">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={preview}
-          alt={alt || "Imagem do dashboard"}
-          className="w-full h-full transition-transform duration-200 group-hover:scale-[1.01]"
+          src={src}
+          alt={alt}
+          className="w-full h-full"
           style={{ objectFit: fit }}
         />
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-start justify-end p-2 opacity-0 group-hover:opacity-100">
-          <button
-            onClick={() => setPreview("")}
-            className="bg-white/90 hover:bg-white rounded-full p-1.5 shadow-sm transition-colors"
-            title="Remover imagem"
+        {/* Re-upload overlay no editor */}
+        {onPropsChange && (
+          <div
+            className="absolute inset-0 opacity-0 hover:opacity-100 bg-black/40 flex items-center justify-center cursor-pointer transition-opacity"
+            onClick={() => inputRef.current?.click()}
           >
-            <X size={13} className="text-gray-700" />
-          </button>
-        </div>
+            <div className="flex items-center gap-2 bg-white/90 rounded-lg px-3 py-1.5">
+              <Upload size={12} className="text-gray-700" />
+              <span className="text-xs text-gray-700 font-medium">Trocar imagem</span>
+            </div>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }}
+            />
+          </div>
+        )}
       </div>
       {caption && (
-        <figcaption className="text-xs text-gray-400 text-center px-2">
-          {caption}
-        </figcaption>
+        <p className="text-xs text-gray-500 text-center px-2 py-1.5 bg-white shrink-0">{caption}</p>
       )}
-    </figure>
+    </div>
   );
 }
