@@ -48,10 +48,12 @@ export function DashboardEditor() {
   useEffect(() => {
     const saved = loadDashboard();
     const meta = loadActiveMeta();
-    if (saved) set(saved);
+    // Ignora formato antigo do Puck (tinha "content" em vez de "blocks")
+    const isValid = saved && Array.isArray(saved.blocks);
+    if (isValid) set(saved);
     if (meta?.name) setDashboardName(meta.name);
     setLoaded(true);
-    if (!saved || saved.blocks.length === 0) setShowTemplates(true);
+    if (!isValid || saved.blocks.length === 0) setShowTemplates(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

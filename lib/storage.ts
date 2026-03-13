@@ -44,7 +44,11 @@ export function saveDashboard(data: DashboardData, name?: string): SaveResult {
 export function loadDashboard(): DashboardData | null {
   try {
     const raw = localStorage.getItem(ACTIVE_KEY);
-    return raw ? JSON.parse(raw) as DashboardData : null;
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Descarta formato antigo do Puck que usava "content" em vez de "blocks"
+    if (!parsed || !Array.isArray(parsed.blocks)) return null;
+    return parsed as DashboardData;
   } catch { return null; }
 }
 

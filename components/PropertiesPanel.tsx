@@ -3,7 +3,7 @@
 
 import { useCallback } from "react";
 import { SlidersHorizontal } from "lucide-react";
-import type { GridBlock, BlockProps, BarChartBlockProps, LineChartBlockProps, PieChartBlockProps } from "@/types";
+import type { GridBlock, BlockProps } from "@/types";
 import { CsvUploader } from "@/components/blocks/CsvUploader";
 
 interface PropertiesPanelProps {
@@ -34,15 +34,20 @@ function SectionDivider({ label }: { label: string }) {
 }
 
 export function PropertiesPanel({ block, onUpdate }: PropertiesPanelProps) {
+  // ⚠️ Hooks SEMPRE antes de qualquer return condicional
   const update = useCallback(<K extends string>(key: K, value: unknown) => {
     if (!block) return;
     onUpdate(block.id, { ...block.props, [key]: value } as BlockProps);
   }, [block, onUpdate]);
 
+  const stopPropagation = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+  }, []);
+
   if (!block) {
     return (
-      <aside className="w-64 shrink-0 bg-gray-900 border-l border-gray-800 flex flex-col items-center justify-center gap-3 text-gray-700 select-none">
-        <SlidersHorizontal size={24} className="opacity-40" />
+      <aside className="w-64 shrink-0 bg-gray-900 border-l border-gray-800 flex flex-col items-center justify-center gap-3 select-none">
+        <SlidersHorizontal size={24} className="opacity-40 text-gray-700" />
         <p className="text-xs text-center px-6 text-gray-600">
           Clique em um bloco no canvas para editar suas propriedades
         </p>
@@ -52,24 +57,18 @@ export function PropertiesPanel({ block, onUpdate }: PropertiesPanelProps) {
 
   const { props } = block;
 
-  // Stop click propagation so clicking fields doesn't deselect the block
-  const handlePanelClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-  }, []);
-
   return (
     <aside
       className="w-64 shrink-0 bg-gray-900 border-l border-gray-800 flex flex-col overflow-hidden"
-      onClick={handlePanelClick}
+      onClick={stopPropagation}
     >
-      {/* Header */}
       <div className="px-4 py-3 border-b border-gray-800 shrink-0">
         <p className="text-xs font-semibold text-gray-300 uppercase tracking-widest">Propriedades</p>
         <p className="text-xs text-gray-600 mt-0.5">{props.type}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-        {/* Layout readonly */}
+        {/* Layout info */}
         <div className="grid grid-cols-2 gap-2">
           <Field label="Largura">
             <div className={`${inputCls} text-gray-500 cursor-default`}>{block.layout.w} / 12</div>
@@ -81,7 +80,6 @@ export function PropertiesPanel({ block, onUpdate }: PropertiesPanelProps) {
 
         <SectionDivider label="Conteúdo" />
 
-        {/* ── KPI Card ── */}
         {props.type === "KpiCard" && (
           <>
             <Field label="Título">
@@ -102,7 +100,6 @@ export function PropertiesPanel({ block, onUpdate }: PropertiesPanelProps) {
           </>
         )}
 
-        {/* ── Bar Chart ── */}
         {props.type === "BarChartBlock" && (
           <>
             <Field label="Título">
@@ -122,28 +119,15 @@ export function PropertiesPanel({ block, onUpdate }: PropertiesPanelProps) {
             </Field>
             <SectionDivider label="Dados" />
             <Field label="CSV local">
-              <CsvUploader
-                value={props.csvData ?? ""}
-                onChange={(text) => update("csvData", text)}
-                onClear={() => update("csvData", "")}
-              />
+              <CsvUploader value={props.csvData ?? ""} onChange={(t) => update("csvData", t)} onClear={() => update("csvData", "")} />
             </Field>
             <Field label="ou URL da API">
-              <input
-                className={inputCls}
-                value={props.endpoint}
-                placeholder="https://..."
-                disabled={!!props.csvData}
-                onChange={(e) => update("endpoint", e.target.value)}
-              />
+              <input className={inputCls} value={props.endpoint} placeholder="https://..." disabled={!!props.csvData} onChange={(e) => update("endpoint", e.target.value)} />
             </Field>
-            {props.csvData && (
-              <p className="text-xs text-gray-600 -mt-2">URL desabilitada — CSV tem prioridade</p>
-            )}
+            {props.csvData && <p className="text-xs text-gray-600 -mt-2">URL desabilitada — CSV tem prioridade</p>}
           </>
         )}
 
-        {/* ── Line Chart ── */}
         {props.type === "LineChartBlock" && (
           <>
             <Field label="Título">
@@ -164,25 +148,14 @@ export function PropertiesPanel({ block, onUpdate }: PropertiesPanelProps) {
             </Field>
             <SectionDivider label="Dados" />
             <Field label="CSV local">
-              <CsvUploader
-                value={props.csvData ?? ""}
-                onChange={(text) => update("csvData", text)}
-                onClear={() => update("csvData", "")}
-              />
+              <CsvUploader value={props.csvData ?? ""} onChange={(t) => update("csvData", t)} onClear={() => update("csvData", "")} />
             </Field>
             <Field label="ou URL da API">
-              <input
-                className={inputCls}
-                value={props.endpoint}
-                placeholder="https://..."
-                disabled={!!props.csvData}
-                onChange={(e) => update("endpoint", e.target.value)}
-              />
+              <input className={inputCls} value={props.endpoint} placeholder="https://..." disabled={!!props.csvData} onChange={(e) => update("endpoint", e.target.value)} />
             </Field>
           </>
         )}
 
-        {/* ── Pie Chart ── */}
         {props.type === "PieChartBlock" && (
           <>
             <Field label="Título">
@@ -202,25 +175,14 @@ export function PropertiesPanel({ block, onUpdate }: PropertiesPanelProps) {
             </Field>
             <SectionDivider label="Dados" />
             <Field label="CSV local">
-              <CsvUploader
-                value={props.csvData ?? ""}
-                onChange={(text) => update("csvData", text)}
-                onClear={() => update("csvData", "")}
-              />
+              <CsvUploader value={props.csvData ?? ""} onChange={(t) => update("csvData", t)} onClear={() => update("csvData", "")} />
             </Field>
             <Field label="ou URL da API">
-              <input
-                className={inputCls}
-                value={props.endpoint}
-                placeholder="https://..."
-                disabled={!!props.csvData}
-                onChange={(e) => update("endpoint", e.target.value)}
-              />
+              <input className={inputCls} value={props.endpoint} placeholder="https://..." disabled={!!props.csvData} onChange={(e) => update("endpoint", e.target.value)} />
             </Field>
           </>
         )}
 
-        {/* ── Text Block ── */}
         {props.type === "TextBlock" && (
           <>
             <Field label="Conteúdo">
@@ -244,7 +206,6 @@ export function PropertiesPanel({ block, onUpdate }: PropertiesPanelProps) {
           </>
         )}
 
-        {/* ── Image Block ── */}
         {props.type === "ImageBlock" && (
           <>
             <Field label="Texto alternativo">

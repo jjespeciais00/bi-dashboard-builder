@@ -11,9 +11,7 @@ import { X, Copy } from "lucide-react";
 
 interface GridEditorProps {
   data: DashboardData;
-  /** Atualiza present sem historiar (drag/resize contínuo) */
   onChange: (data: DashboardData) => void;
-  /** Commita para o histórico (chamado no stop) */
   onCommit: (prev: DashboardData) => void;
   selectedId: string | null;
   onSelect: (id: string | null) => void;
@@ -30,7 +28,6 @@ export function GridEditor({
   onPropsChange, onDelete, onDuplicate,
 }: GridEditorProps) {
   const [containerWidth, setContainerWidth] = useState(1200);
-  // Snapshot do estado antes do drag/resize — para commit correto
   const snapshotRef = useRef<DashboardData>(data);
 
   const containerRef = useCallback((node: HTMLDivElement | null) => {
@@ -62,28 +59,32 @@ export function GridEditor({
     };
   }, [data.blocks]);
 
+  const handleLayoutChange = useCallback((newLayouts: Layout[]) => {
+    onChange(applyLayouts(newLayouts));
+  }, [applyLayouts, onChange]);
+
   const handleDragStart = useCallback(() => {
     snapshotRef.current = data;
   }, [data]);
-
-  const handleDragStop = useCallback((_: Layout[], __: Layout, ___: Layout, ____: boolean, _____: MouseEvent, newLayouts: Layout[]) => {
-    onChange(applyLayouts(newLayouts));
-    onCommit(snapshotRef.current);
-  }, [applyLayouts, onChange, onCommit]);
 
   const handleResizeStart = useCallback(() => {
     snapshotRef.current = data;
   }, [data]);
 
-  const handleResizeStop = useCallback((_: Layout[], __: Layout, ___: Layout, ____: boolean, _____: MouseEvent, newLayouts: Layout[]) => {
-    onChange(applyLayouts(newLayouts));
-    onCommit(snapshotRef.current);
-  }, [applyLayouts, onChange, onCommit]);
+  // ItemCallback: (layout: Layout[], oldItem: Layout, newItem: Layout, placeholder: Layout, e: MouseEvent, element: HTMLElement) => void
+  const handleDragStop = useCallback(
+    (_l: Layout[], _o: Layout, _n: Layout, _p: Layout) => {
+      onCommit(snapshotRef.current);
+    },
+    [onCommit]
+  );
 
-  // During drag — update without commit
-  const handleLayoutChange = useCallback((newLayouts: Layout[]) => {
-    onChange(applyLayouts(newLayouts));
-  }, [applyLayouts, onChange]);
+  const handleResizeStop = useCallback(
+    (_l: Layout[], _o: Layout, _n: Layout, _p: Layout) => {
+      onCommit(snapshotRef.current);
+    },
+    [onCommit]
+  );
 
   if (data.blocks.length === 0) {
     return (
@@ -138,14 +139,12 @@ export function GridEditor({
                   : "ring-1 ring-gray-200 hover:ring-gray-300 shadow-sm"
               }`}
             >
-              {/* Drag handle */}
               <div className="drag-handle absolute top-0 left-0 right-0 h-6 z-10 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-0.5">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="w-0.5 h-2.5 bg-gray-400 rounded-full" />
                 ))}
               </div>
 
-              {/* Action buttons */}
               <div className="absolute top-1.5 right-1.5 z-20 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onMouseDown={(e) => { e.stopPropagation(); onDuplicate(block); }}
@@ -163,9 +162,11 @@ export function GridEditor({
                 </button>
               </div>
 
-              {/* Block content — sem CsvUploader aqui */}
               <div className="w-full h-full overflow-hidden">
-                <BlockRenderer props={block.props} />
+                <BlockRenderer
+                  props={block.props}
+                  onPropsChange={isSelected ? (patch) => onPropsChange(block.id, patch) : undefined}
+                />
               </div>
             </div>
           );
