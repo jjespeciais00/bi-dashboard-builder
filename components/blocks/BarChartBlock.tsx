@@ -14,7 +14,7 @@ import { barChartData } from "@/lib/mock-data";
 export function BarChartBlock({
   title, xAxisLabel, yAxisLabel, endpoint, dataKey, categoryKey, csvData,
 }: BarChartBlockProps) {
-  const { data: fetched, loading, error } = useFetchData<BarChartDataPoint>(endpoint);
+  const { state, data: fetched } = useFetchData<BarChartDataPoint[]>(endpoint, []);
 
   const data = useMemo<BarChartDataPoint[]>(() => {
     if (csvData) return parseCsv(csvData) as BarChartDataPoint[];
@@ -22,6 +22,8 @@ export function BarChartBlock({
     return barChartData;
   }, [csvData, fetched]);
 
+  const loading = state.status === "loading";
+  const error = state.status === "error" ? state.message : null;
   const isMock = !csvData && (!fetched || fetched.length === 0);
 
   return (

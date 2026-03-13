@@ -21,7 +21,7 @@ const COLORS = [
 export function PieChartBlock({
   title, endpoint, nameKey, valueKey, showLabels, csvData,
 }: PieChartBlockProps) {
-  const { data: fetched, loading, error } = useFetchData<PieChartDataPoint>(endpoint);
+  const { state, data: fetched } = useFetchData<PieChartDataPoint[]>(endpoint, []);
 
   const data = useMemo<PieChartDataPoint[]>(() => {
     if (csvData) return parseCsv(csvData) as PieChartDataPoint[];
@@ -29,9 +29,13 @@ export function PieChartBlock({
     return pieChartData;
   }, [csvData, fetched]);
 
+  const loading = state.status === "loading";
+  const error = state.status === "error" ? state.message : null;
   const isMock = !csvData && (!fetched || fetched.length === 0);
+
   const renderLabel = showLabels === "true"
-    ? ({ name, percent }: { name: string; percent: number }) => `${name} ${(percent * 100).toFixed(0)}%`
+    ? ({ name, percent }: { name: string; percent: number }) =>
+        `${name} ${(percent * 100).toFixed(0)}%`
     : undefined;
 
   return (

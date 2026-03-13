@@ -20,7 +20,7 @@ const LINE_COLORS = [
 export function LineChartBlock({
   title, endpoint, lines, categoryKey, showLegend, csvData,
 }: LineChartBlockProps) {
-  const { data: fetched, loading, error } = useFetchData<LineChartDataPoint>(endpoint);
+  const { state, data: fetched } = useFetchData<LineChartDataPoint[]>(endpoint, []);
 
   const data = useMemo<LineChartDataPoint[]>(() => {
     if (csvData) return parseCsv(csvData) as LineChartDataPoint[];
@@ -28,6 +28,8 @@ export function LineChartBlock({
     return lineChartData;
   }, [csvData, fetched]);
 
+  const loading = state.status === "loading";
+  const error = state.status === "error" ? state.message : null;
   const isMock = !csvData && (!fetched || fetched.length === 0);
   const lineKeys = lines.split(",").map((l) => l.trim()).filter(Boolean);
 
